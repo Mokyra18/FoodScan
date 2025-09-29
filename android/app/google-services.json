@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "528802576361",
+    "project_id": "food-snap-40170",
+    "storage_bucket": "food-snap-40170.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528802576361:android:e28953d0d733815a847d78",
+        "android_client_info": {
+          "package_name": "com.example.foodsnap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmAn-2-iKPv0nWnQDTPkItFm5XwMkUsI0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528802576361:android:77889d81fe44e718847d78",
+        "android_client_info": {
+          "package_name": "id.foodsnap.food_snap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmAn-2-iKPv0nWnQDTPkItFm5XwMkUsI0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
