@@ -66,7 +66,7 @@ class _MenuCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
-            colors: [backgroundColor, backgroundColor.withOpacity(0.7)],
+            colors: [backgroundColor, backgroundColor.withAlpha(179)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),

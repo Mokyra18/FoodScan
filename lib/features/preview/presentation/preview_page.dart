@@ -7,16 +7,11 @@ import 'package:foodsnap/core/utils/ui_utils.dart';
 import 'package:foodsnap/features/preview/widget/preview_action_buttons.dart';
 import 'package:go_router/go_router.dart';
 
-
 class PreviewPage extends StatefulWidget {
   final String? imagePath;
-  final String? source; 
+  final String? source;
 
-  const PreviewPage({
-    super.key,
-    required this.imagePath,
-    required this.source, 
-  });
+  const PreviewPage({super.key, required this.imagePath, required this.source});
 
   @override
   State<PreviewPage> createState() => _PreviewPageState();
@@ -64,18 +59,14 @@ class _PreviewPageState extends State<PreviewPage> {
   Future<void> _analyzeImage() async {
     if (_currentImagePath == null || _isLoading) return;
     setState(() => _isLoading = true);
+
     try {
       final firebaseMLService = FirebaseMLService();
-      if (!firebaseMLService.modelStatus['isInitialized']) {
-        await firebaseMLService.initialize();
-      }
-      if (!firebaseMLService.isModelReady) {
-        _showSuccessSnackBar('Downloading ML model...');
-        await firebaseMLService.downloadModel();
-      }
+
       final results = await firebaseMLService.analyzeImage(
         File(_currentImagePath!),
       );
+
       if (mounted) {
         context.push(
           '/result',
@@ -83,7 +74,7 @@ class _PreviewPageState extends State<PreviewPage> {
         );
       }
     } catch (e) {
-      _showErrorSnackBar('Analysis failed: ${e.toString()}');
+      if (mounted) _showErrorSnackBar('Analysis failed: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -111,7 +102,7 @@ class _PreviewPageState extends State<PreviewPage> {
               style: TextStyle(
                 color: Theme.of(
                   context,
-                ).appBarTheme.foregroundColor?.withOpacity(0.7),
+                ).appBarTheme.foregroundColor?.withAlpha(128),
                 fontSize: 12,
               ),
             ),
@@ -134,7 +125,7 @@ class _PreviewPageState extends State<PreviewPage> {
                     Image.file(File(_currentImagePath!), fit: BoxFit.cover),
                     if (_isLoading)
                       Container(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withAlpha(128),
                         child: const Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,

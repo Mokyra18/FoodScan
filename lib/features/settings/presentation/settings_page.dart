@@ -42,10 +42,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _saveApiKey() async {
     final prefs = await SharedPreferences.getInstance();
-    final newKey = _apiKeyController.text.trim();
-    await prefs.setString('geminiApiKey', newKey);
+    final keyToSave = _apiKeyController.text.trim();
+    await prefs.setString('gemini_api_key', keyToSave);
     setState(() {
-      _savedApiKey = newKey;
+      _savedApiKey = keyToSave;
     });
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -57,7 +57,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _removeApiKey() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('geminiApiKey');
+    await prefs.remove('gemini_api_key');
     setState(() {
       _savedApiKey = null;
       _apiKeyController.clear();

@@ -82,6 +82,7 @@ class ImageService {
     BuildContext context,
   ) async {
     try {
+      if (!context.mounted) return null;
       final theme = Theme.of(context);
       final file = File(imagePath);
       if (!await file.exists()) {
