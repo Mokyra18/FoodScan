@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Custom primary button with consistent styling
 class PrimaryButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -67,7 +66,6 @@ class PrimaryButton extends StatelessWidget {
   }
 }
 
-/// Custom secondary button with consistent styling
 class SecondaryButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;

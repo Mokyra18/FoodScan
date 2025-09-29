@@ -23,8 +23,11 @@ class AppRouter {
         path: previewRoute,
         name: 'preview',
         builder: (context, state) {
-          final imagePath = state.extra as String?;
-          return PreviewPage(imagePath: imagePath);
+          final data = state.extra as Map<String, dynamic>? ?? {};
+          return PreviewPage(
+            imagePath: data['imagePath'] as String?,
+            source: data['source'] as String?,
+          );
         },
       ),
       GoRoute(
@@ -57,9 +60,7 @@ class AppRouter {
                 size: 100,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-
               const SizedBox(height: 24),
-
               Text(
                 "Oops! Page not found",
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -68,20 +69,16 @@ class AppRouter {
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 12),
-
               Text(
-                "We couldn’t find the page: ${state.uri}\n"
+                "We couldn't find the page: ${state.uri}\n"
                 "Check the URL or go back to the homepage.",
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 32),
-
               ElevatedButton.icon(
                 onPressed: () => context.go(homeRoute),
                 icon: const Icon(Icons.home),

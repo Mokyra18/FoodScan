@@ -8,7 +8,6 @@ import 'package:foodsnap/features/home/widget/home_menu.dart';
 import 'package:foodsnap/features/home/widget/home_tips.dart';
 import 'package:go_router/go_router.dart';
 
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -20,9 +19,30 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isLoading = false;
   bool _hasApiKey = false;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _requestPermissions();
+    _checkApiKeyStatus();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkApiKeyStatus();
+    }
+  }
+
   Future<void> _requestPermissions() async {
     final hasPermissions = await ImageService.requestPermissions();
-    if (!hasPermissions) {
+    if (!hasPermissions && mounted) {
       SnackBarUtil.showError(
         context,
         'Camera or photo permissions denied',
@@ -53,11 +73,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     try {
       final imagePath = await ImageService.pickImageFromCamera();
       if (imagePath != null && mounted) {
-        SnackBarUtil.showSuccess(context, 'Image captured successfully!');
-        context.push('/preview', extra: imagePath);
+        context.push(
+          '/preview',
+          extra: {'imagePath': imagePath, 'source': 'Camera'},
+        );
       }
     } catch (e) {
-      SnackBarUtil.showError(context, 'Failed to capture: $e');
+      if (mounted) SnackBarUtil.showError(context, 'Failed to capture: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -69,34 +91,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     try {
       final imagePath = await ImageService.pickImageFromGallery();
       if (imagePath != null && mounted) {
-        SnackBarUtil.showSuccess(context, 'Image selected successfully!');
-        context.push('/preview', extra: imagePath);
+        context.push(
+          '/preview',
+          extra: {'imagePath': imagePath, 'source': 'Gallery'},
+        );
       }
     } catch (e) {
-      SnackBarUtil.showError(context, 'Failed to select: $e');
+      if (mounted) SnackBarUtil.showError(context, 'Failed to select: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _requestPermissions();
-    _checkApiKeyStatus();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _checkApiKeyStatus();
     }
   }
 
@@ -113,16 +116,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 onSettingsTap: _navigateToSettings,
                 hasApiKey: _hasApiKey,
               ),
-              const SizedBox(height: 20),
-              if (!_hasApiKey)
+              const SizedBox(height: 24),
+              if (!_hasApiKey) ...[
                 HomeApiBanner(onSettingsTap: _navigateToSettings),
-              const SizedBox(height: 20),
+                const SizedBox(height: 24),
+              ],
               HomeMenu(
                 onCapture: _captureImage,
                 onGallery: _selectFromGallery,
                 isLoading: _isLoading,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               const HomeTips(),
             ],
           ),

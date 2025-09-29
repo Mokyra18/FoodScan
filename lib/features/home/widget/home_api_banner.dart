@@ -7,19 +7,33 @@ class HomeApiBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialBanner(
-      content: const Text(
-        "You need to set up your Gemini API Key in Settings to continue.",
-      ),
-      leading: const Icon(Icons.key, color: Colors.red),
-      backgroundColor: Theme.of(context).colorScheme.errorContainer,
-      actions: [
-        TextButton.icon(
-          onPressed: onSettingsTap,
-          icon: const Icon(Icons.settings),
-          label: const Text("Setup"),
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      color: colorScheme.errorContainer,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Row(
+          children: [
+            Icon(Icons.key, color: colorScheme.onErrorContainer),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Gemini API Key is required. Please set it up in settings.",
+                style: TextStyle(color: colorScheme.onErrorContainer),
+              ),
+            ),
+            TextButton(
+              onPressed: onSettingsTap,
+              style: TextButton.styleFrom(
+                foregroundColor: colorScheme.onErrorContainer,
+              ),
+              child: const Text("Setup"),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

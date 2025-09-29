@@ -3,6 +3,7 @@ import 'package:foodsnap/features/settings/widget/setting_api_key_section.dart';
 import 'package:foodsnap/features/settings/widget/setting_firebase_ml_section.dart';
 import 'package:foodsnap/features/settings/widget/setting_help_section.dart';
 import 'package:foodsnap/features/settings/widget/setting_service_status_section.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -15,34 +16,42 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _apiKeyController = TextEditingController();
+  String? _savedApiKey;
+
   Map<String, dynamic> modelInfo = {};
   String modelStatus = "Unknown";
   bool isModelLoading = false;
+  bool isCheckingModel = false;
   Map<String, dynamic> serviceStatus = {};
-  bool isDarkMode = false;
+  bool isRefreshingStatus = false;
 
   @override
   void initState() {
     super.initState();
     _loadApiKey();
-    _checkModelStatus();
-    _refreshServiceStatus();
+    _checkModelStatus(showSnackBar: false);
+    _refreshServiceStatus(showSnackBar: false);
   }
 
-  // 🔑 API KEY
   Future<void> _loadApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _apiKeyController.text = prefs.getString('geminiApiKey') ?? '';
+      _savedApiKey = prefs.getString('geminiApiKey');
     });
   }
 
   Future<void> _saveApiKey() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('geminiApiKey', _apiKeyController.text.trim());
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("API Key saved successfully")));
+    final newKey = _apiKeyController.text.trim();
+    await prefs.setString('geminiApiKey', newKey);
+    setState(() {
+      _savedApiKey = newKey;
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("API Key saved successfully")),
+      );
+    }
     _refreshServiceStatus();
   }
 
@@ -50,55 +59,129 @@ class _SettingsPageState extends State<SettingsPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('geminiApiKey');
     setState(() {
+      _savedApiKey = null;
       _apiKeyController.clear();
     });
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("API Key removed")));
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("API Key removed")));
+    }
     _refreshServiceStatus();
+  }
+
+  Future<void> _editApiKey() async {
+    setState(() {
+      _savedApiKey = null;
+    });
   }
 
   Future<void> _testApiKey() async {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("API Key test success ✅")));
+    final apiKey = _apiKeyController.text.trim().isNotEmpty
+        ? _apiKeyController.text.trim()
+        : _savedApiKey ?? '';
+    if (apiKey.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("API Key cannot be empty")),
+        );
+      }
+      return;
+    }
+    final url = Uri.parse(
+      "https://generativelanguage.googleapis.com/v1/models?key=$apiKey",
+    );
+    try {
+      final res = await http.get(url);
+      if (!mounted) return;
+      if (res.statusCode == 200) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("✅ API Key is valid")));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("❌ Invalid API Key (code: ${res.statusCode})"),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("⚠️ Error testing API Key: $e")));
+      }
+    }
   }
 
-  // 🤖 FIREBASE ML
   Future<void> _downloadModel() async {
     setState(() => isModelLoading = true);
-    await Future.delayed(const Duration(seconds: 2)); // simulasi download
+    await Future.delayed(const Duration(seconds: 2));
     setState(() {
       modelInfo = {"isDownloaded": true, "sizeFormatted": "24 MB"};
       modelStatus = "Downloaded";
-      isModelLoading = false;
     });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ Model downloaded successfully")),
+      );
+    }
+    setState(() => isModelLoading = false);
     _refreshServiceStatus();
   }
 
-  Future<void> _checkModelStatus() async {
-    setState(() {
-      modelStatus = modelInfo['isDownloaded'] == true
-          ? "Downloaded"
-          : "Not Downloaded";
-    });
+  Future<void> _checkModelStatus({bool showSnackBar = true}) async {
+    setState(() => isCheckingModel = true);
+    try {
+      await Future.delayed(const Duration(milliseconds: 700));
+      bool isDownloaded = modelInfo['isDownloaded'] == true;
+      setState(() {
+        modelStatus = isDownloaded ? "Downloaded" : "Not Downloaded";
+      });
+      if (showSnackBar && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isDownloaded
+                  ? "✅ Model is already downloaded."
+                  : "ℹ️ Model is not downloaded yet.",
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isCheckingModel = false);
+      }
+    }
   }
 
-  // 🔍 SERVICE STATUS
-  Future<void> _refreshServiceStatus() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {
-      serviceStatus = {
-        "gemini": {
-          "enabled": _apiKeyController.text.isNotEmpty,
-          "status": "OK",
-        },
-        "firebaseML": {"isModelLoaded": modelInfo['isDownloaded'] == true},
-      };
-    });
+  Future<void> _refreshServiceStatus({bool showSnackBar = true}) async {
+    setState(() => isRefreshingStatus = true);
+    try {
+      await Future.delayed(const Duration(milliseconds: 500));
+      final hasKey = _savedApiKey != null && _savedApiKey!.isNotEmpty;
+      setState(() {
+        serviceStatus = {
+          "gemini": {
+            "enabled": hasKey,
+            "status": hasKey ? "OK" : "Missing API Key",
+          },
+          "firebaseML": {"isModelLoaded": modelInfo['isDownloaded'] == true},
+        };
+      });
+      if (showSnackBar && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("🔄 Status refreshed")));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isRefreshingStatus = false);
+      }
+    }
   }
 
-  // ❓ HELP
   Future<void> _launchApiKeyUrl() async {
     final url = Uri.parse("https://aistudio.google.com/app/apikey");
     if (await canLaunchUrl(url)) {
@@ -106,42 +189,39 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // 🌙 THEME
-  void _onThemeChanged() {
-    setState(() {
-      isDarkMode = !isDarkMode;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          isDarkMode ? "Dark Mode Enabled 🌙" : "Light Mode Enabled ☀️",
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSection(String title, IconData icon, Widget child) {
+  Widget _buildSection(
+    String title,
+    IconData icon,
+    Widget child, {
+    required Color color,
+  }) {
     return Card(
+      elevation: 1,
       margin: const EdgeInsets.only(bottom: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(icon, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: color.withAlpha(30),
+                  child: Icon(icon, color: color),
+                ),
+                const SizedBox(width: 12),
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
+                    color: color,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             child,
           ],
         ),
@@ -151,20 +231,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: const Text("Settings"),
-        actions: [
-          IconButton(
-            icon: Icon(isDarkMode ? Icons.dark_mode : Icons.light_mode),
-            tooltip: isDarkMode
-                ? "Switch to Light Mode"
-                : "Switch to Dark Mode",
-            onPressed: _onThemeChanged,
-          ),
-        ],
-      ),
+      backgroundColor: scheme.surface,
+      appBar: AppBar(title: const Text("Settings")),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -173,12 +244,14 @@ class _SettingsPageState extends State<SettingsPage> {
             Icons.vpn_key,
             SettingApiKeySection(
               apiKeyController: _apiKeyController,
-              currentApiKey: _apiKeyController.text,
-              hasApiKey: _apiKeyController.text.isNotEmpty,
+              currentApiKey: _savedApiKey,
+              hasApiKey: _savedApiKey != null && _savedApiKey!.isNotEmpty,
               saveApiKey: _saveApiKey,
               removeApiKey: _removeApiKey,
               testApiKey: _testApiKey,
+              onEdit: _editApiKey,
             ),
+            color: scheme.primary,
           ),
           _buildSection(
             "Firebase ML",
@@ -187,9 +260,11 @@ class _SettingsPageState extends State<SettingsPage> {
               modelInfo: modelInfo,
               modelStatus: modelStatus,
               isModelLoading: isModelLoading,
+              isCheckingModel: isCheckingModel,
               downloadModel: _downloadModel,
               checkModelStatus: _checkModelStatus,
             ),
+            color: scheme.secondary,
           ),
           _buildSection(
             "Service Status",
@@ -197,12 +272,15 @@ class _SettingsPageState extends State<SettingsPage> {
             SettingServiceStatusSection(
               serviceStatus: serviceStatus,
               refreshStatus: _refreshServiceStatus,
+              isRefreshing: isRefreshingStatus,
             ),
+            color: scheme.tertiary,
           ),
           _buildSection(
             "Help",
             Icons.help_outline,
             SettingHelpSection(launchApiKeyUrl: _launchApiKeyUrl),
+            color: scheme.inversePrimary,
           ),
         ],
       ),

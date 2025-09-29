@@ -12,12 +12,15 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Row(
       children: [
-        const CircleAvatar(
+        CircleAvatar(
           radius: 28,
-          backgroundColor: Colors.orange,
-          child: Icon(Icons.fastfood, color: Colors.white, size: 30),
+          backgroundColor: colorScheme.primary,
+          child: Icon(Icons.fastfood, color: colorScheme.onPrimary, size: 30),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -26,13 +29,13 @@ class HomeHeader extends StatelessWidget {
             children: [
               Text(
                 "FoodSnap",
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text(
                 "Recognize your food instantly",
-                style: Theme.of(context).textTheme.bodySmall,
+                style: theme.textTheme.bodySmall,
               ),
             ],
           ),
@@ -41,9 +44,7 @@ class HomeHeader extends StatelessWidget {
           icon: const Icon(Icons.settings),
           onPressed: onSettingsTap,
           tooltip: "Settings",
-          color: hasApiKey
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.error,
+          color: hasApiKey ? colorScheme.primary : colorScheme.error,
         ),
       ],
     );

@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const Color primaryColor = Color(0xFFFF9800);
-  static const Color secondaryColor = Color(0xFF009688);
-  static const Color errorColor = Color(0xFFD32F2F);
-
-  // 🌞 Light Theme
   static ThemeData get lightTheme {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: primaryColor,
-      brightness: Brightness.light,
-    ).copyWith(secondary: secondaryColor, error: errorColor);
+    final colorScheme = const ColorScheme.light(
+      primary: Color.fromARGB(255, 255, 136, 0),
+      secondary: Color(0xFF4CAF50),
+      tertiary: Color(0xFF2196F3),
+      inversePrimary: Color(0xFF9C27B0),
+      error: Color(0xFFD32F2F),
+      surface: Color(0xFFFFFBF7),
+    );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: const Color(0xFFFFFBF7), // beda sama dark
-      textTheme: Typography.blackCupertino, // teks gelap
-      iconTheme: IconThemeData(color: colorScheme.primary),
+      scaffoldBackgroundColor: colorScheme.surface,
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
+        foregroundColor: Colors.white,
         centerTitle: true,
         elevation: 2,
       ),
@@ -33,64 +30,14 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        elevation: 4,
+        elevation: 2,
         color: Colors.white,
-        shadowColor: primaryColor.withValues(alpha: 0.2),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: colorScheme.secondary,
+        contentTextStyle: const TextStyle(color: Colors.white),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        contentTextStyle: TextStyle(
-          fontSize: 15,
-          color: colorScheme.onSecondary,
-        ),
-      ),
-    );
-  }
-
-  // 🌙 Dark Theme
-  static ThemeData get darkTheme {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: primaryColor,
-      brightness: Brightness.dark,
-    ).copyWith(secondary: secondaryColor, error: errorColor);
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: colorScheme,
-      scaffoldBackgroundColor: const Color(0xFF121212), // jelas beda
-      textTheme: Typography.whiteCupertino, // teks putih
-      iconTheme: IconThemeData(color: colorScheme.secondary),
-      appBarTheme: AppBarTheme(
-        backgroundColor: Colors.black,
-        foregroundColor: colorScheme.onPrimary,
-        centerTitle: true,
-        elevation: 0,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.grey.shade900,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      cardTheme: CardThemeData(
-        elevation: 3,
-        color: const Color(0xFF1E1E1E),
-        shadowColor: primaryColor.withValues(alpha: 0.3),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: colorScheme.secondary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        contentTextStyle: TextStyle(
-          fontSize: 15,
-          color: colorScheme.onSecondary,
-        ),
       ),
     );
   }

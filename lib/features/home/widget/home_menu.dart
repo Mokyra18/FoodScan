@@ -14,6 +14,8 @@ class HomeMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -23,14 +25,16 @@ class HomeMenu extends StatelessWidget {
       children: [
         _MenuCard(
           icon: Icons.camera_alt,
-          label: isLoading ? "Capturing..." : "Capture",
-          color: Colors.green,
+          label: isLoading ? "Processing..." : "Capture",
+          backgroundColor: colorScheme.secondary,
+          foregroundColor: colorScheme.onSecondary,
           onTap: isLoading ? null : onCapture,
         ),
         _MenuCard(
-          icon: Icons.photo,
-          label: isLoading ? "Selecting..." : "Gallery",
-          color: Colors.blue,
+          icon: Icons.photo_library,
+          label: isLoading ? "Processing..." : "Gallery",
+          backgroundColor: colorScheme.tertiary,
+          foregroundColor: colorScheme.onTertiary,
           onTap: isLoading ? null : onGallery,
         ),
       ],
@@ -41,13 +45,15 @@ class HomeMenu extends StatelessWidget {
 class _MenuCard extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
+  final Color backgroundColor;
+  final Color foregroundColor;
   final VoidCallback? onTap;
 
   const _MenuCard({
     required this.icon,
     required this.label,
-    required this.color,
+    required this.backgroundColor,
+    required this.foregroundColor,
     this.onTap,
   });
 
@@ -56,11 +62,11 @@ class _MenuCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
-      child: Container(
+      child: Ink(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
-            colors: [color.withOpacity(0.8), color.withOpacity(0.5)],
+            colors: [backgroundColor, backgroundColor.withOpacity(0.7)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -68,14 +74,14 @@ class _MenuCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 48, color: Colors.white),
+            Icon(icon, size: 48, color: foregroundColor),
             const SizedBox(height: 8),
             Text(
               label,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(color: Colors.white),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: foregroundColor,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),

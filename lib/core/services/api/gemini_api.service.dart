@@ -11,25 +11,21 @@ class ApiKeyService {
 
   ApiKeyService._();
 
-  /// Save Gemini API key to SharedPreferences
   Future<void> saveGeminiApiKey(String apiKey) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_geminiApiKeyKey, apiKey);
   }
 
-  /// Get Gemini API key from SharedPreferences
   Future<String?> getGeminiApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_geminiApiKeyKey);
   }
 
-  /// Check if Gemini API key exists
   Future<bool> hasGeminiApiKey() async {
     final apiKey = await getGeminiApiKey();
     return apiKey != null && apiKey.isNotEmpty;
   }
 
-  /// Remove Gemini API key from SharedPreferences
   Future<void> removeGeminiApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_geminiApiKeyKey);

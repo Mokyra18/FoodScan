@@ -15,7 +15,6 @@ class FirebaseMLService {
   factory FirebaseMLService() => _instance;
   FirebaseMLService._internal();
 
-  /// Initialize Firebase ML Model Downloader
   Future<void> initialize() async {
     try {
       _modelDownloader = FirebaseModelDownloader.instance;
@@ -26,7 +25,6 @@ class FirebaseMLService {
     }
   }
 
-  /// Download or get cached custom model from Firebase
   Future<FirebaseCustomModel?> downloadModel({
     bool enableModelUpdates = true,
   }) async {
@@ -52,14 +50,12 @@ class FirebaseMLService {
       print('Model downloaded successfully: ${customModel.name}');
       print('Model size: ${customModel.size} bytes');
 
-      // Load the TensorFlow Lite model
       await _loadTFLiteModel(customModel.file);
 
       return customModel;
     } catch (e) {
       print('Error downloading model: $e');
 
-      // Try to get locally cached model
       try {
         final FirebaseCustomModel cachedModel = await _modelDownloader!
             .getModel(_modelName, FirebaseModelDownloadType.localModel);
@@ -74,7 +70,6 @@ class FirebaseMLService {
     }
   }
 
-  /// Load TensorFlow Lite model from file
   Future<void> _loadTFLiteModel(File modelFile) async {
     try {
       _interpreter = Interpreter.fromFile(modelFile);
@@ -87,13 +82,11 @@ class FirebaseMLService {
     }
   }
 
-  /// Load labels from assets/labels.txt
   Future<void> loadLabels() async {
     try {
       print('Loading labels from assets/labels.txt');
       final labelsData = await rootBundle.loadString('assets/labels.txt');
 
-      // Split by lines and filter out empty lines
       _labels = labelsData
           .split('\n')
           .map((line) => line.trim())
@@ -105,7 +98,6 @@ class FirebaseMLService {
     } catch (e) {
       print('Error loading labels from assets: $e');
 
-      // Fallback to default food recognition labels if assets loading fails
       _labels = [
         'Pizza',
         'Burger',
@@ -122,10 +114,8 @@ class FirebaseMLService {
     }
   }
 
-  /// Preprocess image for model input - returns 4D tensor structure
   List<List<List<List<int>>>> _preprocessImage(File imageFile, int inputSize) {
     try {
-      // Read and decode image
       final bytes = imageFile.readAsBytesSync();
       img.Image? image = img.decodeImage(bytes);
 
@@ -133,20 +123,16 @@ class FirebaseMLService {
         throw Exception('Could not decode image');
       }
 
-      // Resize image to model input size
       image = img.copyResize(image, width: inputSize, height: inputSize);
 
-      // Create 4D tensor structure: [batch, height, width, channels]
       final input = List.generate(
-        1, // batch size
+        1,
         (_) => List.generate(
-          inputSize, // height
+          inputSize,
           (y) => List.generate(
-            inputSize, // width
+            inputSize,
             (x) => List.generate(3, (c) {
-              // channels (RGB)
               final pixel = image!.getPixel(x, y);
-              // Convert to uint8 range (0-255) and clamp values
               final value = c == 0
                   ? pixel.r
                   : c == 1
@@ -168,7 +154,6 @@ class FirebaseMLService {
     }
   }
 
-  /// Analyze image using the custom model
   Future<Map<String, dynamic>> analyzeImage(File imageFile) async {
     if (_interpreter == null) {
       throw Exception('Model not loaded. Call downloadModel() first.');
@@ -179,19 +164,16 @@ class FirebaseMLService {
     }
 
     try {
-      // Get model input shape (assuming NHWC format)
       final inputShape = _interpreter!.getInputTensor(0).shape;
-      final inputSize = inputShape[1]; // Height
-      final inputWidth = inputShape[2]; // Width
-      final inputChannels = inputShape[3]; // Channels
+      final inputSize = inputShape[1];
+      final inputWidth = inputShape[2];
+      final inputChannels = inputShape[3];
 
       print('Model input shape: $inputShape');
       print('Expected input size: ${inputSize}x${inputWidth}x$inputChannels');
 
-      // Preprocess image
       final inputData = _preprocessImage(imageFile, inputSize);
 
-      // Prepare output buffer - based on WhatTheFood implementation
       final outputShape = _interpreter!.getOutputTensor(0).shape;
       final numClasses = outputShape[1];
       final output = List.generate(1, (_) => List<int>.filled(numClasses, 0));
@@ -200,17 +182,14 @@ class FirebaseMLService {
       print('Number of classes: $numClasses');
       print('Running inference...');
 
-      // Run inference with proper 4D input tensor
       _interpreter!.run(inputData, output);
 
       print('Inference completed successfully');
 
-      // Process results - convert int output to confidence scores
       final probs = output[0];
-      int maxV = -2147483648; // int.minValue equivalent
+      int maxV = -2147483648;
       int maxI = 0;
 
-      // Find the highest scoring class
       for (int i = 0; i < probs.length; i++) {
         if (probs[i] > maxV) {
           maxV = probs[i];
@@ -218,23 +197,18 @@ class FirebaseMLService {
         }
       }
 
-      // Convert to confidence scores
       final results = <Map<String, dynamic>>[];
 
       if (maxV > -2147483648 && maxI >= 0 && maxI < _labels!.length) {
-        // Calculate total score for normalization
         final totalScore = probs.reduce((a, b) => a + b);
 
-        // Add top results with confidence > threshold
         for (int i = 0; i < probs.length && i < _labels!.length; i++) {
           if (probs[i] > 0) {
-            // Only include positive scores
             final confidence = totalScore > 0
                 ? (probs[i].toDouble() / totalScore.toDouble()).abs()
                 : 0.0;
 
             if (confidence > 0.001) {
-              // 0.1% threshold
               results.add({
                 'label': _labels![i],
                 'confidence': confidence.clamp(0.0, 1.0),
@@ -243,19 +217,13 @@ class FirebaseMLService {
           }
         }
 
-        // Ensure the top result is included even if others are filtered
         if (results.isEmpty && maxI < _labels!.length) {
-          results.add({
-            'label': _labels![maxI],
-            'confidence': 0.5, // Default confidence for single result
-          });
+          results.add({'label': _labels![maxI], 'confidence': 0.5});
         }
       }
 
-      // Sort by confidence
       results.sort((a, b) => b['confidence'].compareTo(a['confidence']));
 
-      // Take top 10 results
       final topResults = results.take(10).toList();
 
       return {
@@ -273,10 +241,8 @@ class FirebaseMLService {
     }
   }
 
-  /// Check if model is ready for inference
   bool get isModelReady => _interpreter != null;
 
-  /// Get model status information
   Map<String, dynamic> get modelStatus => {
     'isInitialized': _modelDownloader != null,
     'isModelLoaded': _interpreter != null,
@@ -284,14 +250,12 @@ class FirebaseMLService {
     'modelName': _modelName,
   };
 
-  /// Check if model exists locally
   Future<Map<String, dynamic>> getModelInfo() async {
     if (_modelDownloader == null) {
       return {'isDownloaded': false, 'error': 'Service not initialized'};
     }
 
     try {
-      // Try to get local model
       final localModel = await _modelDownloader!.getModel(
         _modelName,
         FirebaseModelDownloadType.localModel,
@@ -310,7 +274,6 @@ class FirebaseMLService {
     }
   }
 
-  /// Format file size for display
   String _formatFileSize(int bytes) {
     if (bytes <= 0) return '0 B';
     const suffixes = ['B', 'KB', 'MB', 'GB'];
@@ -319,7 +282,6 @@ class FirebaseMLService {
     return '${(bytes / (1 << (i * 10))).toStringAsFixed(1)} ${suffixes[i]}';
   }
 
-  /// Force download latest model
   Future<FirebaseCustomModel> downloadLatestModel() async {
     if (_modelDownloader == null) {
       throw Exception('Firebase ML Service not initialized');
@@ -340,7 +302,6 @@ class FirebaseMLService {
         ),
       );
 
-      // Load the model immediately
       await _loadTFLiteModel(model.file);
 
       print('Latest model downloaded and loaded: ${model.name}');
@@ -351,7 +312,6 @@ class FirebaseMLService {
     }
   }
 
-  /// Dispose resources
   void dispose() {
     _interpreter?.close();
     _interpreter = null;

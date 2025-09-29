@@ -10,14 +10,12 @@ class FirebaseModelService extends ChangeNotifier {
   FirebaseModelService._();
   static final instance = FirebaseModelService._();
 
-  // Internal state
   ModelDownloadState _state = ModelDownloadState.idle;
   String? _error;
   double _progress = 0.0;
   File? _cachedModel;
   String? _currentModelName;
 
-  // Public getters
   ModelDownloadState get state => _state;
   String? get error => _error;
   double get progress => _progress;
@@ -26,7 +24,6 @@ class FirebaseModelService extends ChangeNotifier {
   bool get isDownloading => _state == ModelDownloadState.downloading;
   bool get hasError => _state == ModelDownloadState.error;
 
-  // Download and cache the latest model from Firebase
   Future<File> downloadLatestModel({required String modelName}) async {
     if (_cachedModel != null &&
         _currentModelName == modelName &&
@@ -71,7 +68,6 @@ class FirebaseModelService extends ChangeNotifier {
     }
   }
 
-  // Handle Firebase-specific errors
   void _handleFirebaseError(FirebaseException e) {
     switch (e.code) {
       case 'permission-denied':
@@ -98,7 +94,6 @@ class FirebaseModelService extends ChangeNotifier {
     _setState(ModelDownloadState.error);
   }
 
-  // Generic error handling
   String _getGenericErrorMessage(dynamic error) {
     final errorString = error.toString().toLowerCase();
 

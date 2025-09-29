@@ -14,17 +14,13 @@ class GeminiService {
   static const String _staticApiKey = '';
 
   Future<String> get _apiKey async {
-    // Try to get from SharedPreferences
     final apiKey = await ApiKeyService.instance.getGeminiApiKey();
     if (apiKey != null && apiKey.isNotEmpty) {
       return apiKey;
     }
-
-    // Fallback to static key (not recommended for production)
     if (_staticApiKey.isNotEmpty) {
       return _staticApiKey;
     }
-
     throw Exception(
       'GEMINI_API_KEY not found. Please set it in the app settings.',
     );
@@ -41,22 +37,21 @@ class GeminiService {
 
   Future<Map<String, dynamic>> getNutritionInfo(String foodName) async {
     try {
-      final apiKey = await _apiKey; // This will throw if not available
-      debugPrint('🔑 Using API Key: ${apiKey.substring(0, 10)}...');
-      debugPrint('🍕 Getting nutrition for: $foodName');
-
+      final apiKey = await _apiKey;
       final requestUrl = '$_baseUrl/$_model:generateContent?key=$apiKey';
-      debugPrint('📡 Request URL: $requestUrl');
 
       final requestData = {
+        "systemInstruction": {
+          "parts": {
+            "text":
+                "Saya adalah suatu mesin yang mampu mengidentifikasi nutrisi atau kandungan gizi pada makanan layaknya uji laboratorium makanan. Hal yang bisa diidentifikasi adalah kalori, karbohidrat, lemak, serat, dan protein pada makanan. Satuan dari indikator tersebut berupa gram.",
+          },
+        },
         'contents': [
           {
             'role': 'user',
             'parts': [
-              {
-                'text':
-                    'Provide nutrition information for the food "$foodName" in grams per 100 grams. Provide accurate and general data for this food. Return only valid JSON with calories, carbohydrate, fat, fiber, protein, sugar as integers.',
-              },
+              {'text': 'Nama makanannya adalah "$foodName"'},
             ],
           },
         ],
@@ -65,21 +60,18 @@ class GeminiService {
           'responseSchema': {
             'type': 'object',
             'properties': {
-              'calories': {'type': 'integer'},
-              'carbohydrate': {'type': 'integer'},
-              'fat': {'type': 'integer'},
-              'fiber': {'type': 'integer'},
-              'protein': {'type': 'integer'},
-              'sugar': {'type': 'integer'},
+              'nutrition': {
+                'type': 'object',
+                'properties': {
+                  'calories': {'type': 'integer'},
+                  'carbohydrate': {'type': 'integer'},
+                  'fat': {'type': 'integer'},
+                  'fiber': {'type': 'integer'},
+                  'protein': {'type': 'integer'},
+                  'sugar': {'type': 'integer'},
+                },
+              },
             },
-            'required': [
-              'calories',
-              'carbohydrate',
-              'fat',
-              'fiber',
-              'protein',
-              'sugar',
-            ],
           },
         },
       };
@@ -102,17 +94,12 @@ class GeminiService {
           if (content['parts'] != null && content['parts'].isNotEmpty) {
             final jsonText = content['parts'][0]['text'];
             final result = jsonDecode(jsonText) as Map<String, dynamic>;
-            debugPrint('✅ Gemini API success: $result');
-            return result;
+            debugPrint('✅ Gemini API success: ${result['nutrition']}');
+            return result['nutrition'] as Map<String, dynamic>;
           }
         }
-      } else {
-        debugPrint(
-          '❌ Gemini API error: ${response.statusCode} - ${response.body}',
-        );
       }
 
-      // Return fallback data if API fails
       return _getFallbackNutrition(foodName);
     } catch (e) {
       debugPrint('❌ Unexpected error: $e');
@@ -122,7 +109,6 @@ class GeminiService {
 
   Map<String, dynamic> _getFallbackNutrition(String foodName) {
     debugPrint('🔄 Using fallback nutrition for: $foodName');
-
     if (foodName.toLowerCase().contains('rice') ||
         foodName.toLowerCase().contains('nasi')) {
       return {
@@ -144,7 +130,6 @@ class GeminiService {
         'sugar': 0,
       };
     } else {
-      // Generic fallback
       return {
         'calories': 0,
         'carbohydrate': 0,

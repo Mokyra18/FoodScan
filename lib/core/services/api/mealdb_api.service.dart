@@ -7,7 +7,6 @@ class MealDbService {
 
   static const String _baseUrl = 'https://www.themealdb.com/api/json/v1/1';
 
-  // Search meal by name in TheMealDB
   Future<Map<String, dynamic>?> searchByName(String name) async {
     final url = Uri.parse('$_baseUrl/search.php?s=$name');
     final response = await http.get(url);

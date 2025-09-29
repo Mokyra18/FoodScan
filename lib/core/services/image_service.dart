@@ -4,11 +4,9 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 
-/// Service class to handle image operations
 class ImageService {
   static final ImagePicker _picker = ImagePicker();
 
-  /// Request necessary permissions for camera and gallery
   static Future<bool> requestPermissions() async {
     try {
       final cameraStatus = await Permission.camera.request();
@@ -21,7 +19,6 @@ class ImageService {
     }
   }
 
-  /// Check if permissions are granted
   static Future<bool> hasPermissions() async {
     try {
       final cameraStatus = await Permission.camera.status;
@@ -34,10 +31,8 @@ class ImageService {
     }
   }
 
-  /// Pick image from camera
   static Future<String?> pickImageFromCamera() async {
     try {
-      // Check permissions first
       if (!await hasPermissions()) {
         final granted = await requestPermissions();
         if (!granted) {
@@ -59,10 +54,8 @@ class ImageService {
     }
   }
 
-  /// Pick image from gallery
   static Future<String?> pickImageFromGallery() async {
     try {
-      // Check permissions first
       if (!await hasPermissions()) {
         final granted = await requestPermissions();
         if (!granted) {
@@ -84,13 +77,11 @@ class ImageService {
     }
   }
 
-  /// Crop image
   static Future<String?> cropImage(
     String imagePath,
     BuildContext context,
   ) async {
     try {
-      // Verify file exists
       final theme = Theme.of(context);
       final file = File(imagePath);
       if (!await file.exists()) {
@@ -145,7 +136,6 @@ class ImageService {
       );
 
       if (croppedFile != null) {
-        // Verify cropped file was created
         final croppedFileExists = await File(croppedFile.path).exists();
         if (!croppedFileExists) {
           throw Exception('Cropped image was not saved properly');
@@ -153,14 +143,13 @@ class ImageService {
         return croppedFile.path;
       }
 
-      return null; // User cancelled
+      return null;
     } catch (e) {
       print('Crop error: $e');
       rethrow;
     }
   }
 
-  /// Delete temporary image file
   static Future<void> deleteImageFile(String? imagePath) async {
     if (imagePath == null) return;
 
@@ -174,7 +163,6 @@ class ImageService {
     }
   }
 
-  /// Get image file size in bytes
   static Future<int?> getImageFileSize(String? imagePath) async {
     if (imagePath == null) return null;
 
@@ -189,7 +177,6 @@ class ImageService {
     return null;
   }
 
-  /// Format file size to human readable string
   static String formatFileSize(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
